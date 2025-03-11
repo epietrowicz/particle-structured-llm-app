@@ -1,0 +1,14 @@
+services:
+  ollama-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "11434:11434" # Ollama API port
+    volumes:
+      - ollama-models:/root/.ollama # Persist downloaded models
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+
+volumes:
+  ollama-models: # Named volume for Ollama models
