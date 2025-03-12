@@ -8,7 +8,7 @@ from faster_whisper import WhisperModel
 model_size = "tiny.en"
 test_file = "too-cold-in-here.mp3"
 current_state = {"lights": 50, "window": 20, "temperature": 30, "fan": 0}
-
+serial_port = "/dev/ttyAMA0"
 
 def transcribe_audio():
     # Run on GPU with FP16
@@ -44,25 +44,29 @@ def format_prompt(segment):
 def parse_response(response):
     global current_state
 
-    response_str = response["message"]["content"]
-    json_str = response_str.split("```json")[1].split("```")[0]
-    json_str = json_str.replace("'", '"')
+    try:
+        response_str = response["message"]["content"]
+        json_str = response_str.split("```json")[1].split("```")[0]
+        json_str = json_str.replace("'", '"')
 
-    new_state = json.loads(json_str)
-    print(f"Current state: {current_state}")
-    print(f"New state: {new_state}")
-    current_state = new_state
+        new_state = json.loads(json_str)
+        print(f"Current state: {current_state}")
+        print(f"New state: {new_state}")
+        current_state = new_state
+    except:
+        print("Could not parse JSON from response")
 
-    return json_str
+    return json.dumps(current_state)
 
 
 def write_to_serial(json_str):
     try:
-        ser = serial.Serial("/dev/ttyACM0", 9600)
+        ser = serial.Serial(serial_port, 115200)
         ser.write(json_str.encode())
         ser.close()
-    except serial.SerialException:
-        print("Could not write to serial port.")
+        print("Wrote new state!")
+    except serial.SerialException as e:
+        print(f"Could not write to serial port: {e}")
 
 
 def main():
@@ -80,6 +84,8 @@ def main():
     )
 
     json_str = parse_response(response)
+    print(json_str)
+    # json_str = "{\"temperature\": 22.5, \"humidity\": 60, \"status\": \"ok\"}"
     write_to_serial(json_str)
 
 
