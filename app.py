@@ -84,8 +84,6 @@ def main():
     )
 
     json_str = parse_response(response)
-    print(json_str)
-    # json_str = "{\"temperature\": 22.5, \"humidity\": 60, \"status\": \"ok\"}"
     write_to_serial(json_str)
 
 
